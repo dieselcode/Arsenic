@@ -1,0 +1,24 @@
+{
+    "name": "dieselcode/Arsenic",
+    "type": "library",
+    "description": "Arsenic Unit Testing for PHP",
+    "keywords": ["php","unit","test"],
+    "homepage": "http://github.com/dieselcode/Arsenic",
+    "license": "LGPL",
+    "authors": [
+        {
+            "name": "Andrew Heebner",
+            "email": "andrew.heebner@gmail.com",
+            "homepage": "http://github.com/dieselcode",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.6"
+    },
+    "autoload": {
+        "psr-0": {
+            "Arsenic": "src"
+        }
+    }
+}
