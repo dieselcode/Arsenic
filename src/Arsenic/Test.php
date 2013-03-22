@@ -79,7 +79,7 @@ class Test
                 'description' => $description
             );
 
-            static::$_suites[static::$_currSuite]['tests'][] = $test;
+            static::$_suites[static::$_currSuite]['tests'][static::_callableHash()] = $test;
         }
 
         return false;
@@ -88,8 +88,8 @@ class Test
     public static function run()
     {
         if (!empty(static::$_suites)) {
-            foreach (static::$_suites as $suite) {
-                echo 'Running tests for "' . $suite['description'] . '"' . PHP_EOL;
+            foreach (static::$_suites as $keySuite => $suite) {
+                echo PHP_EOL . 'Running tests for "' . $suite['description'] . '"' . PHP_EOL . PHP_EOL;
 
                 if (array_key_exists('setup', $suite)) {
                     $suite['setup']();
@@ -97,17 +97,24 @@ class Test
 
 
                 if (!empty($suite['tests'])) {
-                    foreach ($suite['tests'] as $test) {
+                    foreach ($suite['tests'] as $keyTest => $test) {
                         echo ' - Test: "' . $test['description'] . '"' . PHP_EOL;
-                        $test['callback']();
+                        $result = $test['callback']();
                     }
                 }
 
                 if (array_key_exists('tearDown', $suite)) {
                     $suite['tearDown']();
                 }
+
+                echo PHP_EOL . '---------------------------------------------------' . PHP_EOL;
             }
+
+            static::_totalResults();
         }
+
+        // check the suites as a whole here, and return a proper exit code
+        exit(0);
 
     }
 
@@ -118,17 +125,36 @@ class Test
         return $result;
     }
 
-    private static function _callableHash(callable $callable)
+    private static function _callableHash()
     {
         return md5(uniqid('Arsenic', true) . time());
     }
 
-}
+    private static function _totalResults()
+    {
+        $assertions = 0;
+        $passes     = 0;
+        $fails      = 0;
 
-/**
- * Custom exception wrappers for internal use
- */
-class TestException extends \Exception {}
-class AssertionException extends \Exception {}
+        foreach (static::$_testResults as $keySuite => $suite) {
+            foreach ($suite as $keyTest => $test) {
+                foreach ($test as $key => $assertion) {
+                    $assertions++;
+                    if ($assertion['result'] == 'pass') {
+                        $passes++;
+                    } else {
+                        $fails++;
+                    }
+                }
+            }
+        }
+
+        $successPercent = number_format(($passes / $assertions) * 100) . '%';
+
+        echo sprintf('Totals: %d assertions; %d passed, %d failed - (%s success)', $assertions, $passes, $fails, $successPercent) . PHP_EOL;
+        exit(($fails === 0) ? 0 : 1);
+    }
+
+}
 
 ?>

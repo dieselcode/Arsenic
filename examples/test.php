@@ -47,4 +47,22 @@ UT::suite('This is our test suite', function() {
 
 });
 
+UT::suite('Testing second suite', function() {
+
+    UT::setup(function() {
+        UT::fixture('foo', ['foo' => 'bar']);
+    });
+
+    UT::test('Test Foo Setting', function() {
+        $foo = UT::fixture('foo')['foo'];
+        UT::equal('bar', $foo, 'Does bar == bar?');
+
+        UT::fixture('foo', ['foo' => 'nope']);
+        $foo = UT::fixture('foo')['foo'];
+        UT::equal('bar', $foo, 'Does bar == bar?');
+
+    });
+
+});
+
 UT::run();
