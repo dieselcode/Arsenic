@@ -30,16 +30,18 @@ trait AssertTrait
 
     public static function true($input, $description = '', $type = self::ASSERT_NORMAL)
     {
-        $result = !!static::equal($input, true, $description, $type, true);
+        $result = static::equal($input, true, $description, $type, true);
         $status = static::_addAssertionResult(__FUNCTION__, array($input), $result, $description);
-        echo sprintf('  - (%s) "%s"', strtoupper($status), $description) . PHP_EOL;
+
+        return new AssertionResponse(__FUNCTION__, $status, $description);
     }
 
     public static function false($input, $description = '', $type = self::ASSERT_NORMAL)
     {
         $result = static::equal($input, false, $description, $type, true) ? true : false;
         $status = static::_addAssertionResult(__FUNCTION__, array($input), $result, $description);
-        echo sprintf('  - (%s) "%s"', strtoupper($status), $description) . PHP_EOL;
+
+        return new AssertionException(__FUNCTION__, $status, $description);
     }
 
     public static function equal($input, $expected, $description = '', $type = self::ASSERT_NORMAL, $viaAssert = false)
@@ -53,7 +55,32 @@ trait AssertTrait
         }
 
         $status = static::_addAssertionResult(__FUNCTION__, array($input, $expected), $result, $description);
-        echo sprintf('  - (%s) "%s"', strtoupper($status), $description) . PHP_EOL;
+
+        return new AssertionResponse(__FUNCTION__, $status, $description);
+    }
+
+    public static function truthy($input, $description = '')
+    {
+        $result = (bool)$input;
+        $status = static::_addAssertionResult(__FUNCTION__, array($input), $result, $description);
+
+        return new AssertionResponse(__FUNCTION__, $status, $description);
+    }
+
+    // forced fail
+    public static function fail($description = '')
+    {
+        $status = static::_addAssertionResult(__FUNCTION__, array(), false, $description);
+
+        return new AssertionResponse(__FUNCTION__, $status, $description);
+    }
+
+    // forced pass
+    public static function pass($description = '')
+    {
+        $status = static::_addAssertionResult(__FUNCTION__, array(), true, $description);
+
+        return new AssertionResponse(__FUNCTION__, $status, $description);
     }
 
 }

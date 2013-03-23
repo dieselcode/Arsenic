@@ -60,8 +60,18 @@ UT::suite('Testing second suite', function() {
         UT::fixture('foo', ['foo' => 'nope']);
         $foo = UT::fixture('foo')['foo'];
         UT::equal('bar', $foo, 'Does bar == bar?');
-
     });
+
+    UT::test('Truthiness', function() {
+        UT::truthy(1, 'Is 1 truthy?');
+        UT::truthy(0, 'Is 0 truthy?');
+        UT::truthy(-1, 'Is -1 truthy?');
+    });
+
+    UT::Test('How forceful are you?', function() {
+        UT::fail("I'm very forceful");
+        UT::pass("But I'm also forgiving...");
+    }, UT::FLAG_SKIP);
 
 });
 

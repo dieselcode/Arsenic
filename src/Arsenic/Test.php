@@ -24,8 +24,10 @@ class Test
 
     use AssertTrait;
 
-    const ASSERT_NORMAL = false;
-    const ASSERT_STRICT = true;
+    const ASSERT_NORMAL     = false;
+    const ASSERT_STRICT     = true;
+    const FLAG_NORMAL  = 'normal';
+    const FLAG_SKIP    = 'skip';
 
     private static $_suites         = array();
     private static $_currSuite      = null;
@@ -33,6 +35,7 @@ class Test
     private static $_currTest       = null;
 
     private static $_testResults    = array();
+    private static $_testRunTime    = null;
     private static $_fixtures       = array();
 
 
@@ -40,6 +43,9 @@ class Test
 
     public static function suite($description, \Closure $suite)
     {
+        // start the timer...
+        static::$_testRunTime = -microtime(true);
+
         static::$_currSuite = static::_callableHash($suite);
 
         static::$_suites[static::$_currSuite] = array(
@@ -71,12 +77,13 @@ class Test
         return false;
     }
 
-    public static function test($description, \Closure $callback)
+    public static function test($description, \Closure $callback, $flag = self::FLAG_NORMAL)
     {
         if (!is_null(static::$_currSuite)) {
             $test = array(
                 'callback' => $callback,
-                'description' => $description
+                'description' => $description,
+                'flag' => $flag
             );
 
             static::$_suites[static::$_currSuite]['tests'][static::_callableHash()] = $test;
@@ -88,8 +95,9 @@ class Test
     public static function run()
     {
         if (!empty(static::$_suites)) {
+
             foreach (static::$_suites as $keySuite => $suite) {
-                echo PHP_EOL . 'Running tests for "' . $suite['description'] . '"' . PHP_EOL . PHP_EOL;
+                echo PHP_EOL . 'Running tests for "' . $suite['description'] . '"' . PHP_EOL;
 
                 if (array_key_exists('setup', $suite)) {
                     $suite['setup']();
@@ -98,8 +106,13 @@ class Test
 
                 if (!empty($suite['tests'])) {
                     foreach ($suite['tests'] as $keyTest => $test) {
-                        echo ' - Test: "' . $test['description'] . '"' . PHP_EOL;
-                        $result = $test['callback']();
+                        echo PHP_EOL . ' - Test: "' . $test['description'] . '"' . PHP_EOL;
+
+                        if ($test['flag'] == self::FLAG_SKIP) {
+                            echo '   ------- SKIPPED -------' . PHP_EOL;
+                        } else {
+                            $test['callback']();
+                        }
                     }
                 }
 
@@ -107,15 +120,12 @@ class Test
                     $suite['tearDown']();
                 }
 
-                echo PHP_EOL . '---------------------------------------------------' . PHP_EOL;
+                echo PHP_EOL . str_repeat('-', 50) . PHP_EOL;
             }
 
+            static::$_testRunTime += microtime(true);
             static::_totalResults();
         }
-
-        // check the suites as a whole here, and return a proper exit code
-        exit(0);
-
     }
 
     private static function _addAssertionResult($func_name, $func_args, $result, $description = '')
@@ -127,7 +137,7 @@ class Test
 
     private static function _callableHash()
     {
-        return md5(uniqid('Arsenic', true) . time());
+        return md5(uniqid(__CLASS__ . __METHOD__, true) . time() . spl_object_hash(new \stdClass()));
     }
 
     private static function _totalResults()
@@ -151,10 +161,52 @@ class Test
 
         $successPercent = number_format(($passes / $assertions) * 100) . '%';
 
-        echo sprintf('Totals: %d assertions; %d passed, %d failed - (%s success)', $assertions, $passes, $fails, $successPercent) . PHP_EOL;
+        static::out(sprintf(
+            "Totals: %d assertions; %d passed, %d failed - (%s success)%sExecution time: %.4f seconds",
+            $assertions, $passes, $fails, $successPercent, PHP_EOL, static::$_testRunTime
+        ), true, ($fails === 0) ? 'green' : 'red');
+
         exit(($fails === 0) ? 0 : 1);
     }
 
+    protected static function out($message)
+    {
+        echo $message . PHP_EOL;
+    }
+
+}
+
+class AssertionResponse
+{
+    protected $info = array(
+        'function'      => null,
+        'status'        => null,
+        'description'   => null
+    );
+
+    public function __construct()
+    {
+        if (func_num_args() != 3) {
+            throw new \InvalidArgumentException('Missing required number of arguments for ' . get_called_class());
+        }
+
+        $this->info = array(
+            'function'      => func_get_arg(0),
+            'status'        => func_get_arg(1),
+            'description'   => func_get_arg(2)
+        );
+
+        echo $this;
+    }
+
+    public function __toString()
+    {
+        return sprintf('   %s (%s) "%s" of type `assert->%s`',
+            $this->info['status'] == 'pass' ? '*' : '!',
+            strtoupper($this->info['status']),
+            $this->info['description'], $this->info['function']
+        ) . PHP_EOL;
+    }
 }
 
 ?>
