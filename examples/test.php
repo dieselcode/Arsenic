@@ -37,8 +37,8 @@ UT::suite('This is our test suite', function() {
     });
 
     UT::test('Testing fixture "foo"', function() {
-        $foo = UT::fixture('foo')['foo'];
-        UT::equal('bar', $foo, 'Is foo == bar?');
+        $foo = UT::fixture('foo');
+        UT::equal('bar', $foo['foo'], 'Is foo == bar?');
     });
 
     UT::tearDown(function() {
@@ -72,6 +72,20 @@ UT::suite('Testing second suite', function() {
         UT::fail("I'm very forceful");
         UT::pass("But I'm also forgiving...");
     }, UT::FLAG_SKIP);
+
+    UT::test('Test exceptions', function() {
+
+        $callback = function() {
+            if (func_num_args() == 3) {
+                throw new \BadMethodCallException;
+            } else {
+                throw new \InvalidArgumentException;
+            }
+        };
+
+        UT::throws($callback, array('foo', 'bar', 'baz'), 'BadMethodCallException', 'Is it a BadMethodCallException?');
+
+    });
 
 });
 

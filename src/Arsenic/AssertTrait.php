@@ -46,9 +46,9 @@ trait AssertTrait
 
     public static function equal($input, $expected, $description = '', $type = self::ASSERT_NORMAL, $viaAssert = false)
     {
-        $result = ($type == static::ASSERT_NORMAL) ?
-            $input == $expected :
-            $input === $expected;
+        $result = ($type == static::ASSERT_STRICT) ?
+            $input === $expected :
+            $input == $expected;
 
         if ($viaAssert) {
             return $result;
@@ -61,9 +61,9 @@ trait AssertTrait
 
     public static function notEqual($input, $expected, $description = '', $type = self::ASSERT_NORMAL)
     {
-        $result = ($type == static::ASSERT_NORMAL) ?
-            $input != $expected :
-            $input !== $expected;
+        $result = ($type == static::ASSERT_STRICT) ?
+            $input !== $expected :
+            $input != $expected;
 
         $status = static::_addAssertionResult(__FUNCTION__, array($input, $expected), $result, $description);
 
@@ -90,6 +90,27 @@ trait AssertTrait
     public static function pass($description = '')
     {
         $status = static::_addAssertionResult(__FUNCTION__, array(), true, $description);
+
+        return new AssertionResponse(__FUNCTION__, $status, $description);
+    }
+
+    public static function throws(callable $callback, $params, $exception = null, $description = '')
+    {
+        if (is_array($params)) {
+            $exception = $exception ? : 'Exception';
+        } else {
+            $description = $exception;
+            $exception   = $params;
+            $params      = array();
+        }
+        try {
+            call_user_func_array($callback, $params);
+            $result = false;
+        } catch (\Exception $e) {
+            $result = $e instanceof $exception;
+        }
+
+        $status = static::_addAssertionResult(__FUNCTION__, array($callback, $exception), $result, $description);
 
         return new AssertionResponse(__FUNCTION__, $status, $description);
     }
