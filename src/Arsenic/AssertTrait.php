@@ -59,6 +59,17 @@ trait AssertTrait
         return new AssertionResponse(__FUNCTION__, $status, $description);
     }
 
+    public static function notEqual($input, $expected, $description = '', $type = self::ASSERT_NORMAL)
+    {
+        $result = ($type == static::ASSERT_NORMAL) ?
+            $input != $expected :
+            $input !== $expected;
+
+        $status = static::_addAssertionResult(__FUNCTION__, array($input, $expected), $result, $description);
+
+        return new AssertionResponse(__FUNCTION__, $status, $description);
+    }
+
     public static function truthy($input, $description = '')
     {
         $result = (bool)$input;
